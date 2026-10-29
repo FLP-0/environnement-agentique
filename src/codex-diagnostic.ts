@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Codex } from '@openai/codex-sdk';
@@ -15,6 +15,7 @@ if (!directory || !apiKey || !model) {
   const temporaryHome = await mkdtemp(join(tmpdir(), 'agentique-codex-'));
   try {
     const workingDirectory = await realpath(directory);
+    await mkdir(join(temporaryHome, '.codex'));
     const codex = new Codex({
       apiKey,
       env: { PATH: process.env.PATH ?? '', HOME: temporaryHome, CODEX_HOME: join(temporaryHome, '.codex') },
