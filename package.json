@@ -22,12 +22,12 @@
     "codex:diagnostic": "tsx src/codex-diagnostic.ts"
   },
   "dependencies": {
-    "@openai/codex-sdk": "0.153.4",
     "fastify": "5.12.3",
     "pg": "8.23.0",
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@openai/codex-sdk": "0.153.4",
     "@types/node": "24.13.3",
     "@types/pg": "8.23.1",
     "tsx": "4.23.13",
