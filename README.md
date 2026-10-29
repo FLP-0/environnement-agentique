@@ -99,7 +99,7 @@ Seuls `setup` et `demo` lisent `.env` directement. Les autres commandes attenden
 
 ## Diagnostic manuel Codex — optionnel et payant
 
-Le SDK `@openai/codex-sdk` est installé et un diagnostic de lecture est préparé. Il n'est relié ni à l'API ni au worker.
+Le SDK `@openai/codex-sdk` est une dépendance de développement (version exacte, fixée dans le lockfile) : il est absent de l'image Docker, et le script de diagnostic n'est pas compilé dans `dist/`. Le diagnostic de lecture se lance donc hors conteneur, après `npm ci`. Il n'est relié ni à l'API ni au worker.
 
 Configurer `OPENAI_API_KEY` et `CODEX_MODEL` dans l'environnement de cette commande, puis :
 
