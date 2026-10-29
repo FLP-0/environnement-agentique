@@ -1,0 +1,80 @@
+name: environnement-agentique
+
+x-application: &application
+  image: environnement-agentique:local
+  build: .
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  mem_limit: 512m
+  cpus: 1.0
+  pids_limit: 128
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agentique
+      POSTGRES_USER: agentique
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Exécuter npm run setup}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U agentique -d agentique"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+  migrate:
+    <<: *application
+    restart: "no"
+    command: [node, dist/migrate-main.js]
+    environment:
+      DATABASE_URL: postgres://agentique:${POSTGRES_PASSWORD:?Exécuter npm run setup}@postgres:5432/agentique
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    <<: *application
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      API_TOKEN: ${API_TOKEN:?Exécuter npm run setup}
+      DATABASE_URL: postgres://agentique:${POSTGRES_PASSWORD:?Exécuter npm run setup}@postgres:5432/agentique
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *application
+    restart: unless-stopped
+    command: [node, dist/worker-main.js]
+    environment:
+      DATABASE_URL: postgres://agentique:${POSTGRES_PASSWORD:?Exécuter npm run setup}@postgres:5432/agentique
+      POLL_INTERVAL_MS: "2000"
+      LEASE_SECONDS: "60"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+volumes:
+  postgres-data:
