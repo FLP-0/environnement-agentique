@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ConflictError, idempotencyKey, publicTask, TaskStore, taskId, taskInput } from './tasks.js';
 
 export function buildApp(store: TaskStore, token: string, logging = false) {
-  const app = Fastify({ logger: logging, bodyLimit: 32_768, requestTimeout: 10_000, disableRequestLogging: true });
+  const app = Fastify({ logger: logging, bodyLimit: 65_536, requestTimeout: 10_000, disableRequestLogging: true });
   const digest = (value: string) => createHash('sha256').update(value).digest();
   const expected = digest(`Bearer ${token}`);
 
