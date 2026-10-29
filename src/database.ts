@@ -8,16 +8,23 @@ export function createPool(connectionString: string) {
 
 export async function transaction<T>(pool: Pool, fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
+  let rollbackFailed = false;
   try {
     await client.query('BEGIN');
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // Volontairement non journalisé : l'erreur d'origine reste celle relancée.
+      rollbackFailed = true;
+    }
     throw error;
   } finally {
-    client.release();
+    if (rollbackFailed) client.release(true);
+    else client.release();
   }
 }
 
